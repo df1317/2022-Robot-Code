@@ -1,3 +1,12 @@
+/*todo: 
+- limelight: turn left/right, adjust shooter motor speed OR move back/forth using distance calculation -> not ta
+- joystick drive
+- collector's motors in opposition + eject code
+- shooter code makes collector motors run same direction (also part of limelight shooting code)
+- climbing: winch motors (2) and angle ajusting motors (2) staggered, manual control from operator
+- 
+ */
+
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
@@ -63,8 +72,8 @@ double speedLimitAmount = 1;
 
 //Limelight code
 private boolean m_LimelightHasValidTarget = false;
-private double m_LimelightDriveCommand = 0.0;
 private double m_LimelightSteerCommand = 0.0;
+double shooterPower = 0.0;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -237,7 +246,7 @@ private double m_LimelightSteerCommand = 0.0;
   {
     if (m_LimelightHasValidTarget)
     {
-          m_Drive.arcadeDrive(m_LimelightDriveCommand,m_LimelightSteerCommand);
+          m_Drive.arcadeDrive(0.0,m_LimelightSteerCommand);
     }
     else
     {
@@ -260,6 +269,9 @@ public void Update_Limelight_Tracking()
         final double DRIVE_K = 0.26;                    // how hard to drive fwd toward the target
         final double DESIRED_TARGET_AREA = 13.0;        // Area of the target when the robot reaches the wall
         final double MAX_DRIVE = 0.7;                   // Simple speed limit so we don't drive too fast
+        final double maxShooterPower = 0.9; //shooter power
+        final double maxDistance = 27; //feet
+        final double shooterScaling = 0.1; 
 
         double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
         double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
@@ -269,7 +281,6 @@ public void Update_Limelight_Tracking()
         if (tv < 1.0)
         {
           m_LimelightHasValidTarget = false;
-          m_LimelightDriveCommand = 0.0;
           m_LimelightSteerCommand = 0.0;
           return;
         }
@@ -281,15 +292,29 @@ public void Update_Limelight_Tracking()
         m_LimelightSteerCommand = steer_cmd;
 
         // try to drive forward until the target area reaches our desired area
-        double drive_cmd = (DESIRED_TARGET_AREA - ta) * DRIVE_K;
+        double distance = calculateDistance(); 
+        double shooterPowerSubtract = (maxDistance - distance) * shooterScaling; //feet
+        shooterPower = maxShooterPower - shooterPowerSubtract;
+
 
         // don't let the robot drive too fast into the goal
-        if (drive_cmd > MAX_DRIVE)
+      /*  if (drive_cmd > MAX_DRIVE)
         {
           drive_cmd = MAX_DRIVE;
         }
-        m_LimelightDriveCommand = drive_cmd;
+        m_LimelightDriveCommand = drive_cmd; */
   }
+
+  public double calculateDistance() {
+    final double limelightAngle = 30; //degrees
+    final double limelightHeight = 24; //inches
+    final double targetHeight = 104; //inches
+    double a2 = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
+
+    double distance = (targetHeight - limelightHeight)/Math.tan(limelightAngle + a2);
+
+    return distance;
+  }  
 
 @Override
 public void testPeriodic() {
