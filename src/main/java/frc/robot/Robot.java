@@ -1,6 +1,4 @@
 /*todo: 
-- limelight: turn left/right, adjust shooter motor speed OR move back/forth using distance calculation -> not ta
-- joystick drive
 - collector's motors in opposition + eject code
 - shooter code makes collector motors run same direction (also part of limelight shooting code)
 - climbing: winch motors (2) and angle ajusting motors (2) staggered, manual control from operator
@@ -22,6 +20,8 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.networktables.*;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -36,10 +36,21 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
 // Drive motor declarations, numbers need checked
-  WPI_VictorSPX FRMotor = new WPI_VictorSPX(5);
-	WPI_VictorSPX BRMotor = new WPI_VictorSPX(6);
-	WPI_VictorSPX FLMotor = new WPI_VictorSPX(7);
-	WPI_VictorSPX BLMotor = new WPI_VictorSPX(8);
+  WPI_VictorSPX FRMotor = new WPI_VictorSPX(1);
+	WPI_VictorSPX BRMotor = new WPI_VictorSPX(2);
+	WPI_VictorSPX FLMotor = new WPI_VictorSPX(3);
+	WPI_VictorSPX BLMotor = new WPI_VictorSPX(4);
+
+  WPI_VictorSPX TCMotor = new WPI_VictorSPX(5);
+	WPI_VictorSPX BCMotor = new WPI_VictorSPX(6);
+	WPI_VictorSPX ACRMotor = new WPI_VictorSPX(7);
+	WPI_VictorSPX ACLMotor = new WPI_VictorSPX(8);
+
+  WPI_VictorSPX FCMotor = new WPI_VictorSPX(9);
+
+  CANSparkMax SMotor= new CANSparkMax(10, MotorType.kBrushless);
+
+
 
   private MotorControllerGroup m_LeftMotors = new MotorControllerGroup(FLMotor,BLMotor);
   private MotorControllerGroup m_RightMotors = new MotorControllerGroup(FRMotor,BRMotor);
@@ -236,17 +247,24 @@ double shooterPower = 0.0;
 		leftValue = joyL.getY()*speedLimitAmount;
 		extraValue = joyE.getY();
     joyETrigger = joyE.getTrigger();
+    boolean joyEThumbButton = joyE.getRawButton(2);
+    double speedMultiplier = 0.8;
+
+    if (joyETrigger = true) {
+      SMotor.set(1*speedMultiplier);
+    }
 
   //Limelight code
   Update_Limelight_Tracking();
 
-  boolean auto = joyETrigger;
+  boolean auto = joyEThumbButton;
 
   if (auto)
   {
     if (m_LimelightHasValidTarget)
     {
           m_Drive.arcadeDrive(0.0,m_LimelightSteerCommand);
+          //todo feed ball into shooter
     }
     else
     {
